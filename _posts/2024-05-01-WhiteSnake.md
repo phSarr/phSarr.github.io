@@ -2,7 +2,7 @@
 title: "WhiteSnake"
 date: 2023-06-07 18:34:00 +0000
 categories: [Malware Analysis]
-tags: [Malware Analysis, Info Stealer, .NET]
+tags: [Malware Analysis, Info Stealer, RAT, .NET]
 ---
 
 # Overview
@@ -44,17 +44,17 @@ Or alternatively you can just use the results from a Sandbox if the sample was a
 
 It's worth noting that it makes plenty of junk network traffic to Kz domains and other sites
 
-![network](assets/lib/img/posts/2024-05-01-WhiteSnake/network.png)
+![network](assets/imgs/posts/2024-05-01-WhiteSnake/network.png)
 
 Needless to say the sample is obfuscated with a simple XOR routine and ofcourse classes, methods and variable names are "scrambled". As well as it has a fair amount of junk code including the code responsible for uploading random data to legitimte domains as we saw earlier.
 
-![code obfuscation](assets/lib/img/posts/2024-05-01-WhiteSnake/code.png)
+![code obfuscation](assets/imgs/posts/2024-05-01-WhiteSnake/code.png)
 
 It's implementing a custom obfusctor yet we can use `de4dot` to try cleaning up a bit.
 
 We notice the method `Izdaenrvjoeqtlyorjlrbo` that is responsible for string decryption, it takes in the encrypted string and the key as parameters and returns the decrypted string. Just a simple XOR.
 
-![str_decryption](assets/lib/img/posts/2024-05-01-WhiteSnake/str_decryption.png)
+![str_decryption](assets/imgs/posts/2024-05-01-WhiteSnake/str_decryption.png)
 
 There are two ways we can use to bypass that :
 
@@ -141,7 +141,7 @@ $moduleDefMD.Write($patchedDot, $moduleWriterOptions)
 
  And voila :
 
-![decrypted](assets/lib/img/posts/2024-05-01-WhiteSnake/decrypted_presist.png)
+![decrypted](assets/imgs/posts/2024-05-01-WhiteSnake/decrypted_presist.png)
 
 We got a persistance mechanism using the Startup folder.
 
@@ -151,7 +151,7 @@ We got a persistance mechanism using the Startup folder.
 
 Here's the cleaned method for the startup persistance
 
-![persistance in startup](assets/lib/img/posts/2024-05-01-WhiteSnake/persist_cleaned.png)
+![persistance in startup](assets/imgs/posts/2024-05-01-WhiteSnake/persist_cleaned.png)
 
 It also uses scheduled tasks, it will launch a hidden cmd window and run this command
 
@@ -166,7 +166,7 @@ It will also create a mutex name `mefr3hjdol`
 
 WhiteSnake will check if there's a removable device with a free space larger than 5GBs and copies itself there.
 
-![USB Spreading](assets/lib/img/posts/2024-05-01-WhiteSnake/usb_spread.png)
+![USB Spreading](assets/imgs/posts/2024-05-01-WhiteSnake/usb_spread.png)
 
 ## Communication with C&C Servers
 
@@ -269,7 +269,7 @@ public static readonly string[] IP_List = new string[]
 
 WhiteSnake is liveraging the capability of using Native windows APIs (unmanaged code) in C# Applications (managed code). We can identify it by looking at the ImpMap we can see the following
 
-![imp_map](assets/lib/img/posts/2024-05-01-WhiteSnake/native_api.png)
+![imp_map](assets/imgs/posts/2024-05-01-WhiteSnake/native_api.png)
 
 Here's a list of the loaded APIs :
 
@@ -300,11 +300,11 @@ crypt32.dll :
 ```
 Another way is to use [Get-PDInvokeImports](https://github.com/Dump-GUY/Get-PDInvokeImports) to get the tokens of invoked modules and save it to a dnSpy bookmark file like so :
 
-![Get-PDInvokeImports](assets/lib/img/posts/2024-05-01-WhiteSnake/dinvoke.png)
+![Get-PDInvokeImports](assets/imgs/posts/2024-05-01-WhiteSnake/dinvoke.png)
 
 Here's a cleaned version :
 
-![Get-PDInvokeImports_Cleaned](assets/lib/img/posts/2024-05-01-WhiteSnake/dinvoke_cleaned.png)
+![Get-PDInvokeImports_Cleaned](assets/imgs/posts/2024-05-01-WhiteSnake/dinvoke_cleaned.png)
 
 ## Parsing Data
 
@@ -582,8 +582,8 @@ rule WhiteSnake {
 
 Just two funny things I found, looks like the Authors decided to do a little tease after evading ESET static detection with the newer version :
 
-![eset](assets/lib/img/posts/2024-05-01-WhiteSnake/eset.png)
+![eset](assets/imgs/posts/2024-05-01-WhiteSnake/eset.png)
 
 And a funny image in the resources :
 
-![LoL](assets/lib/img/posts/2024-05-01-WhiteSnake/an_l.png)
+![LoL](assets/imgs/posts/2024-05-01-WhiteSnake/an_l.png)

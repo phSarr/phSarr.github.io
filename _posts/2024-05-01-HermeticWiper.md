@@ -165,7 +165,7 @@ And using the device object it got earlier, it will perform write/read operation
 
 # YARA Rule
 
-```json
+```xml
 rule HermeticWiper {
    meta:
       author = "@3weSxZero"

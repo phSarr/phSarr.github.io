@@ -5,8 +5,6 @@ categories: [Malware Analysis]
 tags: [Malware Analysis, Info Stealer, RAT, .NET]
 ---
 
-# Overview
-
 WhiteSnake is an information-stealer/RAT that extracts a range of sensitive information from infected computers.
 It's considered to be MaaS as it's being sold on underground forums with a monthly fee of $120, an annual fee of $900, and a lifetime fee of $1,500.
 
@@ -24,7 +22,7 @@ What is pretty cool about this sample is that it uploads stolen data to `Telegra
 | SHA-256 | C219BEAECC91DF9265574EEA6E9D866C224549B7F41CDDA7E85015F4AE99B7C7 |
 | SSDEEP    | 6144:H6Vo3IhHN5ya1R64TxT8jWHgf8YJkVHC++VeQPBZnq0LZYSwFxQx9tkD9bMLtttB:afhtHxpmWHgf8Y6/Qp1nLiDKyOLt |
 
-And a funny compiler-stamp of `Oct 20, 2071` :)
+And a funny compiler stamp of `Oct 20, 2071` :)
 
 ### Anti-Analysis
 
@@ -38,19 +36,19 @@ So those include `VirtualBox, VMware, RHEV, Linux KVM, QEMU` products.
 
 You can change the manufacturer by editing the RegKey in `HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation`
 
-In general if you want to test your VM aganist similar checks you can use [PaFish](https://github.com/a0rtega/pafish) and [VBox Cloak](https://github.com/d4rksystem/VBoxCloak) to "hide" your vbox machine.
+In general, if you want to test your VM against similar checks you can use [PaFish](https://github.com/a0rtega/pafish) and [VBox Cloak](https://github.com/d4rksystem/VBoxCloak) to "hide" your Vbox machine.
 
-Or alternatively you can just use the results from a Sandbox if the sample was already scanned.
+Or alternatively, you can just use the results from a Sandbox if the sample was already scanned.
 
 It's worth noting that it makes plenty of junk network traffic to Kz domains and other sites
 
 ![network](assets/imgs/posts/2024-05-01-WhiteSnake/network.png)
 
-Needless to say the sample is obfuscated with a simple XOR routine and ofcourse classes, methods and variable names are "scrambled". As well as it has a fair amount of junk code including the code responsible for uploading random data to legitimte domains as we saw earlier.
+Needless to say, the sample is obfuscated with a simple XOR routine and of course classes, methods and variable names are "scrambled". As well as it has a fair amount of junk code including the code responsible for uploading random data to legitimate domains as we saw earlier.
 
 ![code obfuscation](assets/imgs/posts/2024-05-01-WhiteSnake/code.png)
 
-It's implementing a custom obfusctor yet we can use `de4dot` to try cleaning up a bit.
+It's implementing a custom obfuscator yet we can use `de4dot` to try cleaning up a bit.
 
 We notice the method `Izdaenrvjoeqtlyorjlrbo` that is responsible for string decryption, it takes in the encrypted string and the key as parameters and returns the decrypted string. Just a simple XOR.
 
@@ -58,10 +56,10 @@ We notice the method `Izdaenrvjoeqtlyorjlrbo` that is responsible for string dec
 
 There are two ways we can use to bypass that :
 
-* Using `de4dot` or a powershell script to invoke the method by name/token, yet I don't prefer this way as the method name could change and there could be more than one method responsible for string decryption.
-* We can use a more generic powershell script to invoke the decryption routine(s) by searching by its signature (the method takes in 2 string parameters and returns a string value). Good chance to practice powershell scripting.
+* Using `de4dot` or a PowerShell script to invoke the method by name/token, yet I don't prefer this way as the method name could change and there could be more than one method responsible for string decryption.
+* We can use a more generic PowerShell script to invoke the decryption routine(s) by searching by its signature (the method takes in 2 string parameters and returns a string value). Good chance to practice powershell scripting.
 
-Here's the script I used, I commented it explining what it does.
+Here's the script I used, I commented on it explaining what it does.
 
 ```powershell
 # Load dnlib by Reflection
@@ -143,13 +141,13 @@ $moduleDefMD.Write($patchedDot, $moduleWriterOptions)
 
 ![decrypted](assets/imgs/posts/2024-05-01-WhiteSnake/decrypted_presist.png)
 
-We got a persistance mechanism using the Startup folder.
+We got a persistence mechanism using the Startup folder.
 
 ## Persistance and Spreading
 
 ### persistance
 
-Here's the cleaned method for the startup persistance
+Here's the cleaned method for the startup persistence
 
 ![persistance in startup](assets/imgs/posts/2024-05-01-WhiteSnake/persist_cleaned.png)
 
@@ -157,8 +155,8 @@ It also uses scheduled tasks, it will launch a hidden cmd window and run this co
 
  `schtasks /create /tn "WhiteSnake_Stealer" /sc MINUTE /tr "C:\Users\REM\AppData\Local\EsetSecurity\WhiteSnake_Stealer.exe" /rl HIGHEST /f && DEL /F /S /Q /A "C:\Users\REM\Desktop\WhiteSnake\WhiteSnake_Stealer.exe" &&START "" "C:\Users\REM\AppData\Local\EsetSecurity\WhiteSnake_Stealer.exe"` 
 
-This runs a scheduled task called "WhiteSnake_Stealer" that runs the malware every minute. The command also deletes the malware from its originl running direcory.
-Note that it will check the priority it's running on and chaange that accordingly additionally it will create a folder called `EsetSecurity` in the `C:\...\AppData\Local` directory and copies itself there beforehand.
+This runs a scheduled task called "WhiteSnake_Stealer" which runs the malware every minute. The command also deletes the malware from its original running directory.
+Note that it will check the priority it's running on and change that accordingly additionally, it will create a folder called `EsetSecurity` in the `C:\...\AppData\Local` directory and copy itself there beforehand.
 
 It will also create a mutex name `mefr3hjdol`
 
@@ -172,7 +170,7 @@ WhiteSnake will check if there's a removable device with a free space larger tha
 
 `WhiteSnake` uses Onion Routing (Tor) to communicate with C2, which is pretty cool and not so common I belive.
 
-It would download and initialize `Tor` if it's not present on the system and launches the "Beacon" process with the follwing config :
+It would download and initialize `Tor` if it's not present on the system and launches the "Beacon" process with the following config :
 
 ```text
 SOCKSPort Port
@@ -267,7 +265,7 @@ public static readonly string[] IP_List = new string[]
 
 ## Dynamic API Resolving
 
-WhiteSnake is liveraging the capability of using Native windows APIs (unmanaged code) in C# Applications (managed code). We can identify it by looking at the ImpMap we can see the following
+WhiteSnake is leveraging the capability of using Native Windows APIs (unmanaged code) in C# Applications (managed code). We can identify it by looking at the ImpMap we can see the following
 
 ![imp_map](assets/imgs/posts/2024-05-01-WhiteSnake/native_api.png)
 
@@ -308,7 +306,7 @@ Here's a cleaned version :
 
 ## Parsing Data
 
-WhiteSnake uses a large hardcoded XML file as a config file for the type and location of data to steal. In addition to exfiltrting desktop documents with extentions : `*.txt, *.doc*, *.xls*, *.kbd*, *.pdf` , It parses saved credentials and wallets in Gecko and Chromium based browser.
+WhiteSnake uses a large hardcoded XML file as a config file for the type and location of data to steal. In addition to exfiltrating desktop documents with extensions : `*.txt, *.doc*, *.xls*, *.kbd*, *.pdf` , It parses saved credentials and wallets in Gecko and Chromium-based browsers.
 
 Parses and steals wallet addresses, including the public and private keys and transaction history.
 
@@ -380,7 +378,7 @@ It steals data from the following :
   | Pidgin | Account |
   | Telegram | Secret chats |
 
-I highly reccomend taking a look at [this playlist](https://www.youtube.com/playlist?list=PLgGJzr0D7lkn_hO1nkNQ8Ueq_yX6evv4z) <3 to get better insights on the dynamics of info stealers.
+I highly recommend taking a look at [this playlist](https://www.youtube.com/playlist?list=PLgGJzr0D7lkn_hO1nkNQ8Ueq_yX6evv4z) <3 to get better insights on the dynamics of info stealers.
 
 ## Data Exfiltration
 
@@ -463,9 +461,9 @@ Running processes
 Installed Software
 ```
 
-The report is `gzip` compressed then encrypted using an `RC4` Algorithm I belive, with a randomly generated 32 bytes key.
+The report is `gzip` compressed then encrypted using an `RC4` Algorithm I believe, with a randomly generated 32 bytes key.
 
-The key itself is encypted with a RSA public key :
+The key itself is encrypted with a RSA public key :
 
 ```text
 -----BEGIN RSA PRIVATE KEY-----
@@ -479,20 +477,20 @@ t>AQAB</Exponent></RSAKeyValue>
 -----END RSA PRIVATE KEY-----
 ```
 
-So the encrypted report blob will look like this : a `"WS$"` string converted to bytes  + `RC4_encrypted_report` + `RSA_encrypted_RC4_Key`
+So the encrypted report blob will look like this: a `"WS$"` string converted to bytes  + `RC4_encrypted_report` + `RSA_encrypted_RC4_Key`
 
-The report name will look like this : `W1bb3_admin@USER-PC_report.wsr`. 
-It generates 5 charachter ID randomly picked from `[A-Za-z0-9]` concatenated with Username then PC name.
+The report name will look like this: `W1bb3_admin@USER-PC_report.wsr`.
+It generates 5 character ID randomly picked from `[A-Za-z0-9]` concatenated with Username and then PC name.
 
 The file is then uploaded to one of the IPs from the previously mentioned IP list in the `Communication with C&C Servers` Section.
 
-The report link and size will then be uploaded to a Telegram channel with ID : `2076277850` using Bot token : `6104192483:AAFCcnr4FR2XCO83zUSAWWZ9J3qw4tRYQoI`. It will also include information about the victim such as OS Version, Country, Username, Computer name as well as `#Wallets` and `#Beacon` tag indicating stolen wallets and the ability to access victim PC and the WhiteSnake Tag (which is `Newtest56` in our case).
+The report link and size will then be uploaded to a Telegram channel with ID: `2076277850` using Bot token: `6104192483:AAFCcnr4FR2XCO83zUSAWWZ9J3qw4tRYQoI`. It will also include information about the victim such as OS Version, Country, Username, and Computer name as well as `#Wallets` and `#Beacon` tag indicating stolen wallets and the ability to access the victim's PC and the WhiteSnake Tag (which is `Newtest56` in our case).
 
 ## IOCs
 
 * IPs :
 
-  ```text
+  ```vim
   "hxxp://140.238.218.94:8080",
   "hxxp://46.235.26.83:8080",
   "hxxp://168.119.121.16:8080",
@@ -552,7 +550,7 @@ The report link and size will then be uploaded to a Telegram channel with ID : `
   %localappdata%\EsetSecurity
   ```
 
-* Mutex 
+* Mutex
 
   ```text
   mefr3hjdol
@@ -560,7 +558,7 @@ The report link and size will then be uploaded to a Telegram channel with ID : `
   
 ## Yara Rule
 
-```yaml
+```vim
 rule WhiteSnake {
    meta:
       author = "@3weSxZero"
@@ -578,7 +576,7 @@ rule WhiteSnake {
 } 
 ```
 
-## Misc.
+## Misc
 
 Just two funny things I found, looks like the Authors decided to do a little tease after evading ESET static detection with the newer version :
 

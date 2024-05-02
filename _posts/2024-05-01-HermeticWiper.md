@@ -5,8 +5,6 @@ categories: [Malware Analysis]
 tags: [Malware Analysis, wiper, kernel, driver]
 ---
 
-# Overview
-
 HermeticWiper is a destructive piece of malware that was used in the early stages of the Russian invasion of Ukraine early in 2022 against Ukranian facilities.
 
 The way it wipes out the disk while remaining stealthy is pretty neat. It increases file [fragmentation](https://www.youtube.com/watch?v=XSvOfu2PfXk) and overwrites them with randomly generated junk data to render the data recovery pretty much impossible. It would also remain stealthy and avoids corrupting certain files that are important to the OS till it finishes its work. When it's done wiping all files (including its own), it will force a reboot and eventually and not surprisingly Windows OS will no longer work.
@@ -66,12 +64,10 @@ Then it proceeds to disable crash dumps, next it will generate a random name for
 
 ![Naming Driver](assets/imgs/posts/2024-05-01-HermeticWiper/rename_driver.png)
 
-```text
-Why disabling crashdumps tho? well simply, crashdumps are automatically generated when there's an unhandled exception (or an "error") in the Kernel mode causing a "Blue screen of death" (BSOD).
-The dump file captures the system state at the time of the crash, so it can later be analyzed by loading the dump file into the debugger.
+>Why disabling crashdumps tho? well simply, crashdumps are automatically generated when there's an unhandled exception (or an "error") in the Kernel mode causing a "Blue screen of death" (BSOD).
+>The dump file captures the system state at the time of the crash, so it can later be analyzed by loading the dump file into the debugger.
 
-So we can guess it's disabled to be more "stealthy" so if an error occurred during the driver is working (due to its actions or code error), the forensicators/users will have a harder time finding the reason.
-```
+>So we can guess it's disabled to be more "stealthy" so if an error occurred during the driver is working (due to its actions or code error), the forensicators/users will have a harder time finding the reason.
 
 All it has to do now is just decompress the driver and run it!
 
@@ -81,9 +77,7 @@ Inside this subroutine we find it sets another privilege `SeLoadDriverPrivilege`
 
 ![start service](assets/imgs/posts/2024-05-01-HermeticWiper/start_service.png)
 
-```text
-Later on, it will delete its files but it won't matter as the drive is already running in memory. So no harm done..(?)
-```
+>Later on, it will delete its files but it won't matter as the drive is already running in memory. So no harm done..(?)
 
 After the installation is done, it will carry on to disable VolumeShadowCopies/backups. This is also common in Ransomware, deleting ShadowCopies paralyzes the recovery.
 
@@ -125,11 +119,9 @@ If it finds that the system type is NTFS it would additionally overwrite the `$B
 
 ![overwrite ntfs](assets/imgs/posts/2024-05-01-HermeticWiper/ntfs.png)
 
-```text
-The "$LogFile" is called the 'transaction logging file', It provides file system recoverability by logging, or recording, the operations required for any transaction that alters important file system data structures.
+>The "$LogFile" is called the 'transaction logging file', It provides file system recoverability by logging, or recording, the operations required for any transaction that alters important file system data structures.
 
-The $BitMap is a special file within the NTFS file system, it keeps track of all of the used and unused clusters on an NTFS volume.
-```
+>The $BitMap is a special file within the NTFS file system, it keeps track of all of the used and unused clusters on an NTFS volume.
 
 [comment]: <> (overwrite ntfs function : ntfs_routine.png)
 
@@ -165,7 +157,7 @@ And using the device object it got earlier, it will perform write/read operation
 
 ## YARA Rule
 
-```yaml
+```vim
 rule HermeticWiper {
    meta:
       author = "@3weSxZero"

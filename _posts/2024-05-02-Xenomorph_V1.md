@@ -30,15 +30,15 @@ With everything in order I'll go ahead and run the sample with `adb shell monkey
 
 The app displays the following screen tricking the user into granting it accessibility permissions.
 
-![accessibility](assets/imgs/posts/2024-05-02-Xenomorph/app_running.png)
+![accessibility](assets/img/posts/2024-05-02-Xenomorph/app_running.png)
 
 The code for this window is AES decrypted and displayed to the user via WebView.
 
-![accessibility](assets/imgs/posts/2024-05-02-Xenomorph/permission.png)
+![accessibility](assets/img/posts/2024-05-02-Xenomorph/permission.png)
 
 Now let's take a look at the filesystem changes caused by the sample with `adb shell "find /data/data/com.spike.old -type f -exec file {} \;"`
 
-![filesystem](assets/imgs/posts/2024-05-02-Xenomorph/filesystem_changes.png)
+![filesystem](assets/img/posts/2024-05-02-Xenomorph/filesystem_changes.png)
 
 Two of these are looking very interesting `/data/data/com.spike.old/shared_prefs/ring0.xml` and `/data/data/com.spike.old/app_DynamicOptDex/hq.json`.
 
@@ -90,7 +90,7 @@ After doing some code analysis later, it gets more clear what each value means :
 
 The `hq.json` file is kinda interesting, it actually has `PK` magic headers.
 
-![hq.json](assets/imgs/posts/2024-05-02-Xenomorph/hq.png)
+![hq.json](assets/img/posts/2024-05-02-Xenomorph/hq.png)
 
 So this looks like a Json-packed sample. This and the `ring0.xml` are very similar to the one used by [Alien](https://drive.google.com/file/d/1qd7Nqjhe2vyGZ5bGm6gVw0mM1D6YDolu/view) malware, Also some code reusability can be noticed in Xenomorph based on Alien, It'll get clearer throughout the analysis.
 
@@ -106,15 +106,15 @@ adb logcat --pid=3914
 
 And YEP looks like the malware authors forgot to remove log statements in their final release
 
-![logs](assets/imgs/posts/2024-05-02-Xenomorph/logs.png)
+![logs](assets/img/posts/2024-05-02-Xenomorph/logs.png)
 
 For the captured traffic, unfortunately, it looks like the C2 is down or could have been deactivated. The same goes for `kart12sec[.]gq` found in the XML file.
 
-![traffic](assets/imgs/posts/2024-05-02-Xenomorph/pcap.png)
+![traffic](assets/img/posts/2024-05-02-Xenomorph/pcap.png)
 
 But a good thing is, that the Logs we got might give us an idea of its behavior including how the communication is supposed to be like in addition to which classes and services are being run and what information is being gathered about the infected device.
 
-![logs](assets/imgs/posts/2024-05-02-Xenomorph/logs1.png)
+![logs](assets/img/posts/2024-05-02-Xenomorph/logs1.png)
 
 It sets a persistence with the WakeLock, verifies if it has the permissions it needs and goes ahead grabbing SMS messages, phone numbers and the device name in addition to the apps currently installed on the device. Furthermore, it logs which apps the user interacts with utilizing its accessibility permission. Also, it looks like the traffic is going to be encrypted with probably an "AES" algorithm as there are "IV" and a "key". This can be verified by using `frida-trace` :
 
@@ -122,13 +122,13 @@ It sets a persistence with the WakeLock, verifies if it has the permissions it n
 frida-trace -U -j javax.crypto.Cipher!* -j javax.crypto.spec.SecretKeySpec!* -f com.spike.old
 ```
 
-![frida-trace](assets/imgs/posts/2024-05-02-Xenomorph/trace.png)
+![frida-trace](assets/img/posts/2024-05-02-Xenomorph/trace.png)
 
 It seems that the key is hardcoded `5f 9e 4a 92 b1 d8 c8 b9 8d b9 b7 f8 f8 80 0d 2e`. The URL is `simpleyo5[.]tk/ping` and it concats the key, url and uid (randomly generated ID) into the concat field and `SHA-256` hashes it.
 
 Since the encryption details are now known, the huge blob in the `id` field can be decrypted :
 
-![aes_decrypt](assets/imgs/posts/2024-05-02-Xenomorph/cyberchef.png)
+![aes_decrypt](assets/img/posts/2024-05-02-Xenomorph/cyberchef.png)
 
 So the `id` field contains the AES encrypted "`payload`". But since the field wasn't fully logged, I can also use Frida hooking to intercept the full plaintext before it's encrypted.
 
@@ -218,7 +218,7 @@ console.log("Javascript loaded");
 
 And here it is :
 
-![permissions](assets/imgs/posts/2024-05-02-Xenomorph/aes_hook_script.png)
+![permissions](assets/img/posts/2024-05-02-Xenomorph/aes_hook_script.png)
 
 ```json
 {
@@ -240,13 +240,13 @@ I'll go ahead and load it up to `jadx` to take a look at the manifest and the de
 
 Examining an app's manifest file can reveal a lot about its potential behavior, and can disclose what kind of data the app might collect and how it interacts with the system in addition to some telltale signs about the file being packed.
 
-![permissions](assets/imgs/posts/2024-05-02-Xenomorph/permissions.png)
+![permissions](assets/img/posts/2024-05-02-Xenomorph/permissions.png)
 
 Looking at the permissions we notice excessive access; The app requests access to a vast amount of data, including phone state (calls, voicemail), location, SMS messages (potentially including verification codes or other sensitive information), contact details, all installed apps, and even the ability to disable the lock screen and possibly send SMS messages without user interaction. In addition to drawing on top of other apps, `SYSTEM_ALERT_WINDOW` gives the app a high degree of control over the victim device, potentially allowing it to install additional malware.
 
  Additionally, the sample here seems to be designed to run at boot (`RECEIVE_BOOT_COMPLETED`) - which we can also notice in the receivers section - and persistently (`WAKE_LOCK`).
 
-![receivers](assets/imgs/posts/2024-05-02-Xenomorph/receivers.png)
+![receivers](assets/img/posts/2024-05-02-Xenomorph/receivers.png)
 
 In the previous screenshot, we notice the receiver responsible for intercepting incoming SMS messages but the class `com.sniff.sibling.Services.SmsReceiver` nor the package `com.sniff.sibling` exists in the `jadx` file browser which is a clear sign that this class will be dynamically loaded after unpacking the sample/loading other stages.
 
@@ -254,7 +254,7 @@ Since only one class is mentioned in the manifest that already exists (`com.spik
 
 Scrolling through some lines of junk and obfuscated code, one thing stands out a bit which looks like a decryption routine
 
-![interesting code](assets/imgs/posts/2024-05-02-Xenomorph/decryption_routine.png)
+![interesting code](assets/img/posts/2024-05-02-Xenomorph/decryption_routine.png)
 
 Cleaning this up a bit we can clearly see the decryption code here
 
@@ -381,11 +381,11 @@ This looks like [paranoid](https://github.com/MichaelRocks/paranoid) obfuscator 
 
 We can find good clues here to follow like `getAssets`, `getBytes` and `write` so I'll stick with the latter and find my way back to where it was called in the code.
 
-![write_file](assets/imgs/posts/2024-05-02-Xenomorph/write_file.png)
+![write_file](assets/img/posts/2024-05-02-Xenomorph/write_file.png)
 
 The `write_file` function takes in two parameters, the second is a wrapper to get the absolute path, the first one tho is interesting as it contains the decryption routine:
 
-![decryption routine](assets/imgs/posts/2024-05-02-Xenomorph/rc4.png)
+![decryption routine](assets/img/posts/2024-05-02-Xenomorph/rc4.png)
 
 After some cleaning, it looks like an [RC4 algorithm](https://en.wikipedia.org/wiki/RC4#Key-scheduling_algorithm_(KSA)) :
 
@@ -455,7 +455,7 @@ private int[] key_schedule(byte[] bArr) {
 
 And this looks like our key :
 
-![possible key](assets/imgs/posts/2024-05-02-Xenomorph/key.png)
+![possible key](assets/img/posts/2024-05-02-Xenomorph/key.png)
 
 Here's a Python script to decrypt the `hq.json` payload :
 
@@ -514,11 +514,11 @@ Now with the payload decrypted, I can further investigate the full functionality
 
 `droidlysis` provides a good overview of what it does :
 
-![droidlysis](assets/imgs/posts/2024-05-02-Xenomorph/droidlysis.png)
+![droidlysis](assets/img/posts/2024-05-02-Xenomorph/droidlysis.png)
 
 But I'll jump right into the code
 
-![main activity](assets/imgs/posts/2024-05-02-Xenomorph/main.png)
+![main activity](assets/img/posts/2024-05-02-Xenomorph/main.png)
 
 It checks if `FitnessAccessibilityService` is running, if not it starts some initialization including requesting accessibility permission from the user. It starts a loop in a new thread. It potentially shows a push notification every 15 seconds with the app name and title, it also makes the notification appear as a high priority. This loop continues until the accessibility service becomes enabled.
 
@@ -526,7 +526,7 @@ It also starts the `KingService` and sets up persistence.
 
 And interestingly it checks if it's a Xiaomi or an Oppo device to hide the app icon from the launcher.
 
-![hide activity](assets/imgs/posts/2024-05-02-Xenomorph/hide_activity.png)
+![hide activity](assets/img/posts/2024-05-02-Xenomorph/hide_activity.png)
 
 ```java
 public static void deleteLabelIcon(Context context) {
@@ -723,7 +723,7 @@ A list of generic permissions can be noticed in the code snippet below alongside
 
 Managing overlays to mimic specific apps and steal user-sensitive data, the overlays to be injected and corresponding apps are to be received from the C2 in the form of a JSON file.
 
-![overlay injection](assets/imgs/posts/2024-05-02-Xenomorph/overlay_injection.png)
+![overlay injection](assets/img/posts/2024-05-02-Xenomorph/overlay_injection.png)
 
 #### 10- Information Gathering
 
@@ -757,17 +757,17 @@ Collecting information about the infected system such as Android ID, device mode
 
 It checks if the user tried uninstalling the app or revoking its accessibility permissions.
 
-![deletion prevention](assets/imgs/posts/2024-05-02-Xenomorph/deletion.png)
+![deletion prevention](assets/img/posts/2024-05-02-Xenomorph/deletion.png)
 
-![accessibility prevention](assets/imgs/posts/2024-05-02-Xenomorph/accessability.png)
+![accessibility prevention](assets/img/posts/2024-05-02-Xenomorph/accessability.png)
 
 #### 12- Doze Mode
 
 Managing Doze mode/battery optimization which attempts to conserve battery by restricting apps' access to network and CPU-intensive services. So eventually Xenomorph will be bypassing that.
 
-![doze management](assets/imgs/posts/2024-05-02-Xenomorph/managine_doze.png)
+![doze management](assets/img/posts/2024-05-02-Xenomorph/managine_doze.png)
 
-![doze bypass](assets/imgs/posts/2024-05-02-Xenomorph/doze.png)
+![doze bypass](assets/img/posts/2024-05-02-Xenomorph/doze.png)
 
 #### 13- Xenomorph Logging
 

@@ -1,6 +1,6 @@
 ---
-title: "Xenomorph v3"
-date: 2024-05-04 00:00:00 +0000
+title: "Xenomorph V3"
+date: 2024-05-06 00:00:00 +0000
 categories: [Malware Analysis]
 tags: [Malware Analysis, Info Stealer, APK, Android, Trojan]
 ---
@@ -742,7 +742,7 @@ The `key` contains the accessibility class and event, package name, viewId, text
 ## IOCs
 
 * URLs
-  
+
   ```text
   "dedeperesere.xyz", "vldeolan.com", "cofi.hk", "team.mi1kyway.tech"
   ```

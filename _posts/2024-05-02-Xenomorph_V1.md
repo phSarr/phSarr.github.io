@@ -5,7 +5,7 @@ categories: [Malware Analysis]
 tags: [Malware Analysis, Info Stealer, APK, Android, Trojan]
 ---
 
-Xenomorph, a nasty piece of Android malware, has been evolving rapidly. Initially targeting European banks in early 2022, it recently set its sights on over 30 US banks.  This adaptable malware steals login credentials, bypasses two-factor authentication, and can even automate fraudulent transfers through a powerful feature called the Automated Transfer System (ATS).  The group behind Xenomorph, likely a cybercrime group named Hadoken Security,  may be selling the malware as a service (MaaS) to other attackers. Overall, Xenomorph is a dangerous banking trojan capable of significant financial loss for unsuspecting users.
+Xenomorph, a nasty piece of Android malware, Initially targeting European banks in early 2022, recently set its sights on over 30 US banks. This adaptable malware logs user activity and intercepts notifications and SMS in addition to performing overlay attacks to steal Personal Identifiable Information (PII), which could then be used by criminals to perform fraud, It has deletion-prevention features. The group behind Xenomorph, likely a cybercrime group named Hadoken Security, may be selling the malware as a service (MaaS) to other attackers. Overall, Xenomorph is a dangerous banking trojan capable of significant financial loss for unsuspecting users.
 
 | Property | Value |
 | ------ | ----------- |
@@ -15,7 +15,7 @@ Xenomorph, a nasty piece of Android malware, has been evolving rapidly. Initiall
 | SHA-256 | 8d813e1a86a762706fdf5237422fbd2a96c5bf16ef724ac873be4dcfa48c1d4a |
 | SSDEEP | 24576:yYTOqzcKG/f3HFjIFoneNSwbQRdf1esbQlPRUJuaf5rxY25cGLR4rEjC:yYVcVHl6lrylbQlDaf5rMrEjC |
 
-> This sample is from an earlier 2022 campaign.
+> This sample is from an earlier 2022 campaign. It was initially distributed on Google Play.
 
 ## Dynamic Analysis
 
@@ -130,95 +130,7 @@ Since the encryption details are now known, the huge blob in the `id` field can 
 
 ![aes_decrypt](assets/img/posts/2024-05-02-Xenomorph/cyberchef.png)
 
-So the `id` field contains the AES encrypted "`payload`". But since the field wasn't fully logged, I can also use Frida hooking to intercept the full plaintext before it's encrypted.
-
-```python
-import sys
-import frida
-import time
-
-def write_data(file_prefix, data):
-    current_time = round(time.time() * 1000)
-    filename = f'{current_time}_{file_prefix}.bin'
-    print('Writing file:', filename)
-    with open(filename, 'wb') as output_file:
-        output_file.write(bytearray((d % 0xFF for d in data)))
-
-def inject_script(session):
-    def on_message(message, _):
-        if message['type'] == 'send':
-            if 'input' in message['payload']:
-                write_data('iv', message['payload']['iv'])
-                write_data('input', message['payload']['input'])
-            elif 'output' in message['payload']:
-                write_data('output', message['payload']['output'])
-            elif 'key' in message['payload']:
-                write_data('key', message['payload']['key'])
-            else:
-                print('Unknown message: ', message)
-        else:
-            print('Unknown message: ', message)
-
-    script = session.create_script("""console.log("Loading Javascript");
-                                    Java.perform(() => {
-                                    const Cipher = Java.use("javax.crypto.Cipher");
-                                    Cipher.doFinal.overload('[B').implementation = function(arr) {
-                                    send( {'input': arr, 'iv': this.getIV() });
-                                    const result = this.doFinal(arr);
-                                    send( {'output': result });
-                                    return result;
-                                    };
-                                    const SecretKeySpec = Java.use("javax.crypto.spec.SecretKeySpec");
-                                    SecretKeySpec.$init.overload(
-                                    "[B", "int", "int", "java.lang.String").implementation = function(
-                                    arr, off, len, alg) {
-                                    send( {'key': arr} );
-                                    return this.$init(arr, off, len, alg);
-                                    };
-                                    });
-                                    console.log("Javascript loaded");""")
-    script.on('message', on_message)
-    script.load()
-
-def main():
-    emulator = frida.get_usb_device()
-    pid = emulator.spawn('com.spike.old')
-    session = emulator.attach(pid)
-    inject_script(session)
-    emulator.resume(pid)
-    sys.stdin.read()
-    session.detach()
-
-if __name__ == '__main__':
-    main()
-```
-
-Here's the JavaScript script :
-
-```javascript
-console.log("Loading Javascript");
-
-Java.perform(() => {
-  const Cipher = Java.use("javax.crypto.Cipher");
-  Cipher.doFinal.overload('[B').implementation = function(arr) {
-    send( {'input': arr, 'iv': this.getIV() });
-    const result = this.doFinal(arr);
-    send( {'output': result });
-    return result;
-  };
-  const SecretKeySpec = Java.use("javax.crypto.spec.SecretKeySpec");
-  SecretKeySpec.$init.overload(
-  "[B", "int", "int", "java.lang.String").implementation = function(arr, off, len, alg) {
-    send( {'key': arr} );
-    return this.$init(arr, off, len, alg);
-  };
-});
-console.log("Javascript loaded");
-```
-
-And here it is :
-
-![permissions](assets/img/posts/2024-05-02-Xenomorph/aes_hook_script.png)
+So the `id` field contains the AES encrypted "`payload`". And here it is :
 
 ```json
 {
@@ -512,12 +424,6 @@ if __name__ == "__main__":
 
 Now with the payload decrypted, I can further investigate the full functionality of the malware.
 
-`droidlysis` provides a good overview of what it does :
-
-![droidlysis](assets/img/posts/2024-05-02-Xenomorph/droidlysis.png)
-
-But I'll jump right into the code
-
 ![main activity](assets/img/posts/2024-05-02-Xenomorph/main.png)
 
 It checks if `FitnessAccessibilityService` is running, if not it starts some initialization including requesting accessibility permission from the user. It starts a loop in a new thread. It potentially shows a push notification every 15 seconds with the app name and title, it also makes the notification appear as a high priority. This loop continues until the accessibility service becomes enabled.
@@ -677,7 +583,7 @@ Enabling/disabling an SMS interception feature.
 
 #### 8- Checking Permissions
 
-This checks if the malware is granted the permissions it needs with the ability to report back with what permissions it currently has including if it's working as the defualt SMS app, if it has the notification listener active and if it has disabled battery optimization mode (doze mode).
+This checks if the malware is granted the permissions it needs with the ability to report back with what permissions it currently has including if it's working as the default SMS app, if it has the notification listener active and if it has disabled battery optimization mode (doze mode).
 
 A list of generic permissions can be noticed in the code snippet below alongside the AES key and a list of C2s.
 
@@ -721,7 +627,7 @@ A list of generic permissions can be noticed in the code snippet below alongside
 
 #### 9- Overlay Injection
 
-Managing overlays to mimic specific apps and steal user-sensitive data, the overlays to be injected and corresponding apps are to be received from the C2 in the form of a JSON file.
+Managing overlays to mimic specific apps and steal user-sensitive data, a download URL for the overlays to be injected and corresponding apps are to be received from the C2 in the form of a JSON file.
 
 ![overlay injection](assets/img/posts/2024-05-02-Xenomorph/overlay_injection.png)
 
@@ -973,7 +879,7 @@ A dedicated Xiaomi functionality is run for getting accessibility permission and
     }
 ```
 
-If the running app is set to have an overlay injection, it'll initiate it. Webview is used to view the fake app interface to the user and reports stolen data back to the C2.
+If the running app is set to have an overlay injection, it'll initiate it. Webview is used to view the fake app interface to the user and report stolen data back to the C2.
 
 The overlay data is downloaded and decrypted with the hardcoded key.
 

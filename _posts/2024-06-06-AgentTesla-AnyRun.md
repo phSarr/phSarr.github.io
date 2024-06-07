@@ -13,27 +13,27 @@ You can check the report and download the sample from [here](https://app.any.run
 
 The phishing email contains an attachment with the payload
 
-![mail](assets\img\posts\2024-06-06-AgentTesla-AnyRun\mail.png)
+![mail](assets/img/posts/2024-06-06-AgentTesla-AnyRun/mail.png)
 
-![payload](assets\img\posts\2024-06-06-AgentTesla-AnyRun\proc.png)
+![payload](assets/img/posts/2024-06-06-AgentTesla-AnyRun/proc.png)
 
 **Execution Graph:**
 
-![graph](assets\img\posts\2024-06-06-AgentTesla-AnyRun\graph.png)
+![graph](assets/img/posts/2024-06-06-AgentTesla-AnyRun/graph.png)
 
 On taking a look at the final payload we get a lot of useful information about the sample behaviour and techniques. And the Chat-GPT plugin can really help to summarize all this information
 
-![info](assets\img\posts\2024-06-06-AgentTesla-AnyRun\info.png)
+![info](assets/img/posts/2024-06-06-AgentTesla-AnyRun/info.png)
 
 ## Phishing E-Mail Analysis
 
 The `.eml` file can also be opened by any text editor. Scrolling down a bit into its content we find information about where the email originated from. This will always differ for every email as it entirely depends on the email infrastructure and how the email got to the victim.
 
-![mail info](assets\img\posts\2024-06-06-AgentTesla-AnyRun\mail_info.png)
+![mail info](assets/img/posts/2024-06-06-AgentTesla-AnyRun/mail_info.png)
 
 Scrolling down a couple hundred lines passing through the content, the attachment can be found here as a huge Base64 encoded blob.
 
-![attachment](assets\img\posts\2024-06-06-AgentTesla-AnyRun\attachment.png)
+![attachment](assets/img/posts/2024-06-06-AgentTesla-AnyRun/attachment.png)
 
 This can be dumped into a file and decoded OR just using a Python script to dump the attachment like [this one](https://gist.github.com/urschrei/5258588).
 
@@ -41,11 +41,11 @@ This can be dumped into a file and decoded OR just using a Python script to dump
 
 The first executable loads a DLL named `SimpleLogin.dll`. Which is located in the resources. It'll be fetched, decrypted then loaded into the memory
 
-![first decryption](assets\img\posts\2024-06-06-AgentTesla-AnyRun\first_dec.png)
+![first decryption](assets/img/posts/2024-06-06-AgentTesla-AnyRun/first_dec.png)
 
 The same process will be repeated by loading 2 other DLLs from the resources, GZip decompression, and XOR decryption then loading the next stage.
 
-![second decryption](assets\img\posts\2024-06-06-AgentTesla-AnyRun\second_load.png)
+![second decryption](assets/img/posts/2024-06-06-AgentTesla-AnyRun/second_load.png)
 
 Here's a list of loaders' DLL names and their SHA-256 hashes :
 
@@ -226,11 +226,11 @@ The e-mail subject is `PW_<UserName/ComputerName>` and the body contains informa
 
 ANY.RUN did great capturing the traffic for us:
 
-![traffic](assets\img\posts\2024-06-06-AgentTesla-AnyRun\traffic.png)
+![traffic](assets/img/posts/2024-06-06-AgentTesla-AnyRun/traffic.png)
 
 The `HTML` content should be like so:
 
-![content](assets\img\posts\2024-06-06-AgentTesla-AnyRun\html_info.png)
+![content](assets/img/posts/2024-06-06-AgentTesla-AnyRun/html_info.png)
 
 **NOTE**: This sample is again not configured to enable Keylogging nor take a screenshot of the system. If keylogging was enabled, the keylogs would be stored at `%tmp%/log.tmp`
 
@@ -299,17 +299,17 @@ rule AgentTesla
 
 Of course, the rule should be tested, I'll use ANY.RUN's ThreatIntel Yara search
 
-![ANY.RUN yara](assets\img\posts\2024-06-06-AgentTesla-AnyRun\yara.png)
+![ANY.RUN yara](assets/img/posts/2024-06-06-AgentTesla-AnyRun/yara.png)
 
 ## MITRE ATT&CK® TTPs
 
 ANY.RUN is really doing everything for us
 
-![MITRE](assets\img\posts\2024-06-06-AgentTesla-AnyRun\mitre.png)
+![MITRE](assets/img/posts/2024-06-06-AgentTesla-AnyRun/mitre.png)
 
 Providing great insights as well
 
-![MITRE](assets\img\posts\2024-06-06-AgentTesla-AnyRun\ttps.png)
+![MITRE](assets/img/posts/2024-06-06-AgentTesla-AnyRun/ttps.png)
 
 | Tactic | ID | Name |  Use |
 | ------ | ------ | ------ | ----------- |

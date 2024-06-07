@@ -253,14 +253,6 @@ ANY.RUN provides us with the IOCs ready for some Copy-Pasta and it of course mat
 + Dropped executable file: `09404copy.exe` | SHA-256: 91a58a047d6ea0c7ddb7c89b0a43a5453fd5d7145c78a836ef803d5fb0f65254
 + email: `7a03424d-5804-f8e2-8c1b-562ce548300c.eml` | SHA-256: 7b2184447031e1e9ebf9509b0dfa4c66744cdf3468299aaad269ad927158d3c8
 
-### Domains
-
-+ us2.smtp.mailhostbox.com
-
-### IPs
-
-+ 208.91.198.143
-
 ## YARA Rule
 
 ```vim

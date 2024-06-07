@@ -236,7 +236,7 @@ The `HTML` content should be like so:
 
 And it appears to be set for communication over TOR but it's yet to be implemented.
 
-### Persistance
+### Persistence
 
 Persistence is not enabled in our case but it generally seems to achieve it via the startup folder and registery key.
 

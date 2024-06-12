@@ -7,6 +7,8 @@ tags: [Malware Analysis, .NET, RAT, Trojan, ANY.RUN]
 
 Quasar RAT is a Remote Access Trojan (RAT) that stands out for its [open-source](https://github.com/quasar/Quasar) nature. It supports a wide range of functionalities like keylogging, file transfer, victim screen/webcam monitoring, command execution via CMD and many more. Here it's being distributed utilizing a tampered version of [foobar2000](https://en.wikipedia.org/wiki/Foobar2000) which is an audio player.
 
+You can check the report and download the sample [here](https://app.any.run/tasks/0b4feff1-abab-4f51-9977-3f7ee80309f6/)
+
 ## ANYRUN Analysis
 
 The sample is pretty straightforward, the first stage is just a dropper for the payload identified as Quasar RAT.
